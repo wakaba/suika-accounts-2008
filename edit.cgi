@@ -29,8 +29,8 @@ if (@path == 3 and
     $path[0] eq 'users' and
     $path[1] =~ /\A[0-9a-z-]+\z/) {
   my $user_id = $path[1];
-  check_access_right (allowed_users => {$user_id => 1},
-                      allowed_groups => {'admin-users' => 1});
+  my $ac = check_access_right (allowed_users => {$user_id => 1},
+                               allowed_groups => {'admin-users' => 1});
 
   if ($path[2] eq '') {
     my $user_prop = get_user_prop ($user_id);
@@ -155,9 +155,30 @@ if (@path == 3 and
              });
       }
       
-      print q[</section>];
+      print q[</section><section id=props><h2>Properties</h2>
 
-      print qq[<section id=password>
+<p><em>Though these properties are only accessible to administrators,
+you are advised not to expose any confidential data.</em>];
+
+      print_prop_list ($ac, $user_prop,
+        {
+          name => 'full_name',
+          label => 'Full name',
+          field_type => 'text',
+        },
+        {
+          name => 'mail_addr',
+          label => 'Mail address',
+          field_type => 'email',
+        },
+        {
+          name => 'home_url',
+          label => 'Web site URL',
+          field_type => 'url',
+        },
+      );
+
+      print qq[</section><section id=password>
 <h2>Password</h2>
 
 <form action=password method=post accept-charset=utf-8>
@@ -209,29 +230,55 @@ cannot enable your account by yourself.
         my $action = $cgi->get_parameter ('action');
         my $status;
         if ($action eq 'join') {
-          if ($gs->{member}) {
-            $status = q[You are a member];
-            #
-          } elsif ($gs->{no_approval}) {
-            $status = q[You are waiting for an approval];
-            #
-          } elsif ($gs->{invited}) {
-            $gs->{member} = 1;
-            $status = q[Registered];
-            #
-          } else {
-            if ($group_prop->{join_condition}->{invitation}) {
-              print_error (403, 'You are not invited to this group');
-              exit;
-            } elsif ($group_prop->{join_condition}->{approval}) {
-              $gs->{no_approval} = 1;
-              $status = q[Request submitted];
+          if (scalar $cgi->get_parameter ('agreed')) {
+            if ($gs->{member}) {
+              $status = q[You are a member];
               #
-            } else {
+            } elsif ($gs->{no_approval}) {
+              $status = q[You are waiting for an approval];
+              #
+            } elsif ($gs->{invited}) {
               $gs->{member} = 1;
               $status = q[Registered];
               #
+            } else {
+              if ($group_prop->{join_condition}->{invitation}) {
+                print_error (403, 'You are not invited to this group');
+                exit;
+              } elsif ($group_prop->{join_condition}->{approval}) {
+                $gs->{no_approval} = 1;
+                $status = q[Request submitted];
+                #
+              } else {
+                $gs->{member} = 1;
+                $status = q[Registered];
+                #
+              }
             }
+          } else {
+            my $e_group_id = htescape ($group_id);
+            print qq[Content-Type: text/html; charset=utf-8
+
+<!DOCTYPE HTML>
+<html lang=en>
+<title>Joining the group $e_group_id</title>
+<link rel=stylesheet href="/www/style/html/xhtml">
+<h1>Joining the group $e_group_id</h1>
+
+<dl>
+<dt>Description
+<dd>@{[$group_prop->{desc}]}
+</dl>
+
+<form action="@{[htescape ($cgi->request_uri)]}" accept-charset=utf-8 method=post>
+<input type=hidden name=action value=join>
+
+<p>Do you really want to join this group?
+<input type=submit name=agreed value=yes>
+<input type=button value=no onclick="history.back ()">
+
+</form>];
+            exit;
           }
         } elsif ($action eq 'leave') {
           if ($gs->{member}) {
@@ -257,7 +304,7 @@ cannot enable your account by yourself.
         regenerate_htpasswd_and_htgroup ();
         commit ();
 
-        print qq[Status: 204 $status\n\n];
+        redirect (303, $status, './');
         exit;
       }
     }
@@ -304,6 +351,33 @@ cannot enable your account by yourself.
         exit;
       }
     }
+  } elsif ($path[2] eq 'prop') {
+    if ($cgi->request_method eq 'POST') {
+      lock_start ();
+      my $user_prop = get_user_prop ($user_id);
+      if ($user_prop) {
+        binmode STDOUT, ':encoding(utf-8)';
+
+        my $prop_name = $cgi->get_parameter ('name');
+        if (defined $prop_name and
+            {
+              full_name => 1,
+              mail_addr => 1,
+              home_url => 1,
+            }->{$prop_name}) {
+          $user_prop->{$prop_name} = $cgi->get_parameter ('value');
+
+          set_user_prop ($user_id, $user_prop);
+          commit ();
+          
+          print "Status: 204 Property updated\n\n";
+          exit;
+        } else {
+          print_error (400, 'Bad property');
+          exit;
+        }
+      }
+    }
   }
 } elsif (@path == 3 and
          $path[0] eq 'groups' and
@@ -325,9 +399,25 @@ cannot enable your account by yourself.
 <html lang=en>
 <title>Group $e_group_id</title>
 <link rel=stylesheet href="/www/style/html/xhtml">
-<h1>Group $e_group_id</h1>
-        
-<section id=members><h2>Members</h2>];
+<h1>Group $e_group_id</h1>];
+      
+      print q[<section id=props><h2>Properties</h2>];
+
+      print_prop_list ($ac, $group_prop,
+           {
+            name => 'desc',
+            label => 'Description',
+            field_type => 'textarea',
+            public => 1,
+           },
+           {
+            name => 'admin_group',
+            label => 'Administrative group',
+            field_type => 'text',
+           },
+          );
+
+      print q[</section><section id=members><h2>Members</h2>];
 
       if ($ac->{read_group_member_list}) {
         my @members;
@@ -469,6 +559,31 @@ maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}">
         exit;
       }
     }
+  } elsif ($path[2] eq 'prop') {
+    forbidden () unless $ac->{write};
+
+    if ($cgi->request_method eq 'POST') {
+      lock_start ();
+      my $group_prop = get_group_prop ($group_id);
+      if ($group_prop) {
+        binmode STDOUT, ':encoding(utf-8)';
+
+        my $prop_name = $cgi->get_parameter ('name');
+        if (defined $prop_name and
+            {desc => 1, admin_group => 1}->{$prop_name}) {
+          $group_prop->{$prop_name} = $cgi->get_parameter ('value');
+
+          set_group_prop ($group_id, $group_prop);
+          commit ();
+          
+          print "Status: 204 Property updated\n\n";
+          exit;
+        } else {
+          print_error (400, 'Bad property');
+          exit;
+        }
+      }
+    }
   } elsif ($path[2] =~ /\Auser\.([0-9a-z-]+)\z/ or
            $path[2] eq 'invite-user') {
     my $user_id = $1 // $cgi->get_parameter ('user-id') // '';
@@ -595,22 +710,10 @@ title="Use a string of characters 'a'..'z', '0'..'9', and '-' with length 4..10 
   my $user_id = $cgi->remote_user;
   forbidden () if not defined $user_id or $user_id !~ /\A[0-9a-z-]+\z/;
 
-  my $user_url = get_absolute_url ('users/' . $user_id . '/');
-  
-  print qq[Status: 303 See Other
-Location: $user_url
-Content-Type: text/html; charset=us-ascii
-
-See <a href="@{[htescape ($user_url)]}">your user page</a>.];
+  redirect (303, 'See other', 'users/' . $user_id . '/');
   exit;
 } elsif (@path == 0) {
-  my $root_url = get_absolute_url ('edit/');
-
-  print qq[Status: 301 Moved permanently
-Location: $root_url
-Content-Type: text/html; charset=us-ascii
-
-See <a href="@{[htescape ($root_url)]}">other page</a>.];
+  redirect (301, 'Moved', 'edit/');
   exit;
 }
 
@@ -631,6 +734,38 @@ sub print_list_section (%) {
   print q[</ul></section>];
 } # print_list_section
 
+sub print_prop_list ($$@) {
+  my $ac = shift;
+  my $prop_hash = shift;
+
+  for my $prop (@_) {
+    if ($prop->{public}) {
+      print q[<p><strong>], htescape ($prop->{label}), q[</strong>: ];
+      print $prop_hash->{$prop->{name}};
+    }
+    
+    if ($ac->{write}) {
+      print q[<form action="prop" accept-charset=utf-8 method=post>];
+      print q[<input type=hidden name=name value="], htescape ($prop->{name}), q[">];
+      if ($prop->{field_type} eq 'textarea') {
+        print q[<p><label><strong>], htescape ($prop->{label});
+        print q[</strong>: <br><textarea name="value"];
+        print q[>], htescape ($prop_hash->{$prop->{name}} // '');
+        print q[</textarea></label>];
+        print q[<p><input type=submit value=Save>];
+      } else {
+        print q[<p><label><strong>], htescape ($prop->{label});
+        print q[</strong>: <input type="] . $prop->{field_type};
+        print q[" name="value" ];
+        print q[value="], htescape ($prop_hash->{$prop->{name}} // '');
+        print q["></label> ];
+        print q[<input type=submit value=Save>];
+      }
+      print q[</form>];
+    }
+  }
+} # print_prop_list
+
 sub check_access_right (%) {
   my %opt = @_;
   
@@ -640,15 +775,14 @@ sub check_access_right (%) {
   my $user_prop = get_user_prop ($user_id);
   forbidden () unless $user_prop;
 
-  if ($opt{allowed_users}->{$user_id}) {
-    return {
-            write => 1,
-            #read_group_member_list => 0,
-           };
-  }
-
   my $ac = {};
   my $return_ac;
+
+  if ($opt{allowed_users}->{$user_id}) {
+    $ac->{write} = 1;
+    $return_ac = 1;
+  }
+
   for my $group_id (keys %{$opt{allowed_groups} or {}}) {
     my $group_prop = get_group_prop ($group_id);
     next unless $group_prop;
@@ -662,6 +796,14 @@ sub check_access_right (%) {
   if (defined $opt{group_context}) {
     my $group_prop = get_group_prop ($opt{group_context});
     if ($group_prop) {
+      if (defined $group_prop->{admin_group}) {
+        my $ag_prop = get_group_prop ($group_prop->{admin_group});
+        if ($ag_prop and
+            $user_prop->{'group.' . $group_prop->{admin_group}}->{member}) {
+          return {write => 1, read_group_member_list => 1};
+        }
+      }
+      
       my $gs = $user_prop->{'group.' . $opt{group_context}};
       if ($gs->{member}) {
         $return_ac = 1;
@@ -689,6 +831,18 @@ sub forbidden () {
   }
   exit;
 } # forbidden
+
+sub redirect ($$$) {
+  my ($code, $status, $url) = @_;
+  
+  my $abs_url = get_absolute_url ($url);
+
+  print qq[Status: $code $status
+Location: $abs_url
+Content-Type: text/html; charset=us-ascii
+
+See <a href="@{[htescape ($abs_url)]}">other page</a>.];
+} # redirect
 
 sub percent_decode ($) {
   return $dom->create_uri_reference ($_[0])

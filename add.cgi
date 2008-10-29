@@ -47,6 +47,7 @@ if (@path == 1 and $path[0] eq 'new-user') {
     my $user_prop = {id => $user_id, pass_crypted => $pass_crypted};
     set_user_prop ($user_id, $user_prop);
 
+    regenerate_htpasswd_and_htgroup ();
     commit ();
 
     my $user_url = get_absolute_url ('../edit/users/' . $user_id . '/');

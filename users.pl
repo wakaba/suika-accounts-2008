@@ -178,6 +178,7 @@ Content-Type: text/html; charset=utf-8
 <!DOCTYPE HTML>
 <html lang=en>
 <title>$code @{[htescape ($text)]}</title>
+<link rel=stylesheet href="/www/style/html/xhtml">
 <h1>Error</h1>
 <p>@{[htescape ($text)]}.<!--];
   print 0 for 0..511; # for WinIE
