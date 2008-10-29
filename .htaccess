@@ -1,0 +1,6 @@
+<Files ~ "edit">
+  Require valid-user
+  AuthType Basic
+  AuthUserFile /home/wakaba/public_html/pbin/accounts/data/htpasswd
+  AuthName "User account manager"
+</Files>
