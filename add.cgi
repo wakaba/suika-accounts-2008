@@ -8,6 +8,7 @@ use CGI::Carp qw[fatalsToBrowser];
 require Message::CGI::Carp;
 
 require 'users.pl';
+require 'texts.pl';
 
 require Message::CGI::HTTP;
 require Encode;
@@ -15,6 +16,9 @@ my $cgi = Message::CGI::HTTP->new;
 $cgi->{decoder}->{'#default'} = sub {
   return Encode::decode ('utf-8', $_[1]);
 };
+
+our $Lang = 'ja'
+    if $cgi->get_meta_variable ('HTTP_ACCEPT_LANGUAGE') =~ /\bja\b/; ## TODO: ...
 
 require Message::DOM::DOMImplementation;
 my $dom = Message::DOM::DOMImplementation->new;
@@ -33,12 +37,14 @@ if (@path == 1 and $path[0] eq 'new-user') {
     my $user_id = $cgi->get_parameter ('user-id');
 
     if ($user_id !~ /\A[0-9a-z-]{4,20}\z/) {
-      print_error (400, qq[User id "$user_id" is invalid; use characters [0-9a-z-]{4,20}]);
+      print_error (400,
+                   q[User id %s is invalid; use characters [0-9a-z-]{4,20}],
+                   $user_id);
       exit;
     }
     
     if (get_user_prop ($user_id)) {
-      print_error (400, qq[User id "$user_id" is already used]);
+      print_error (400, q[User id %s is already used], $user_id);
       exit;
     }
 
@@ -58,37 +64,57 @@ Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
 <html lang=en>
-<title>User "@{[htescape ($user_id)]}" registered</title>
+<title>];
+    print_text ('User %s registered', sub { print '', htescape ($user_id) });
+    print q[</title>
 <link rel=stylesheet href="/www/style/html/xhtml">
-<h1>User "@{[htescape ($user_id)]}" registered</h1>
-<p>Your user account is created successfully.
-<p>See <a href="@{[htescape ($user_url)]}">your user account information page</a>.];
+<h1>];
+    print_text ('User %s registered', sub { print '', htescape ($user_id) });
+    print q[</h1><p>];
+    print_text ('Your user account is created successfully.');
+    print q[<p>];
+    print_text ('See %s.', sub {
+      print q[<a href="@{[htescape ($user_url)]}">];
+      print_text ('your user account information page');
+      print q[</a>];
+    });
     exit;
   } else {
     binmode STDOUT, ":encoding(utf-8)";
-    print qq[Content-Type: text/html; charset=utf-8
+    print q[Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
 <html lang=en>
-<title>Create a new user account</title>
+<title>];
+    print_text ('Create a new user account');
+    print q[</title>
 <link rel=stylesheet href="/www/style/html/xhtml">
-<h1>Create a new user account</h1>
+<h1>];
+    print_text ('Create a new user account');
+    print q[</h1>
 
 <form action=new-user accept-charset=utf-8 method=post>
 
-<p><strong>User id</strong>: <input type=text name=user-id
-maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}"
-title="Use a string of characters 'a'..'z', '0'..'9', and '-' with length 4..10 (inclusive)">
-
-<p><strong>Password</strong>: <input type=password name=user-pass
-size=10 required pattern=".{4,}" title="Type 4 characters at minimum">
-
-<p><strong>Password</strong> (type again): <input type=password
+<p><strong>];
+    print_text ('User id');
+    print q[</strong>: <input type=text name=user-id
+maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}"> (];
+    print_text ('Use [0-9a-z-]{4,20}.');
+    print q[)<p><strong>];
+    print_text ('Password');
+    print q[</strong>: <input type=password name=user-pass
+size=10 required pattern=".{4,}"> (];
+    print_text ('Type 4 characters at minimum');
+    print q[)<p><strong>];
+    print_text ('Password');
+    print q[</strong> (];
+    print_text ('type again');
+    print q[): <input type=password
 name=user-pass2 size=10 required pattern=".{4,}">
 
-<p><input type=submit value=Create>
-
-</form>];
+<p><input type=submit value="];
+    print_text ('Create');
+    print q["></form>];
     exit;
   }
 } elsif (@path == 0) {

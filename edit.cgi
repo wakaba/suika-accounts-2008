@@ -8,6 +8,7 @@ use CGI::Carp qw[fatalsToBrowser];
 require Message::CGI::Carp;
 
 require 'users.pl';
+require 'texts.pl';
 
 require Message::CGI::HTTP;
 require Encode;
@@ -15,6 +16,9 @@ my $cgi = Message::CGI::HTTP->new;
 $cgi->{decoder}->{'#default'} = sub {
   return Encode::decode ('utf-8', $_[1]);
 };
+
+our $Lang = 'ja'
+    if $cgi->get_meta_variable ('HTTP_ACCEPT_LANGUAGE') =~ /\bja\b/; ## TODO: ...
 
 require Message::DOM::DOMImplementation;
 my $dom = Message::DOM::DOMImplementation->new;
@@ -39,14 +43,17 @@ if (@path == 3 and
       
       my $e_user_id = htescape ($user_id);
       
-      print qq[Content-Type: text/html; charset=utf-8
+      print q[Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
 <html lang=en>
-<title>User $e_user_id</title>
+<title>];
+      print_text ('User %s', sub { print $e_user_id });
+      print q[</title>
 <link rel=stylesheet href="/www/style/html/xhtml">
-<h1>User $e_user_id</h1>
-];
+<h1>];
+      print_text ('User %s', sub { print $e_user_id });
+      print q[</h1>];
 
       my @joined;
       my @requested;
@@ -73,7 +80,9 @@ if (@path == 3 and
         }
       }
 
-      print qq[<section id=groups><h2>Groups</h2>];
+      print q[<section id=groups><h2>];
+      print_text ('Groups');
+      print q[</h2>];
       
       if (@joined) {
         print_list_section
@@ -87,7 +96,9 @@ if (@path == 3 and
                print q[<a href="../../groups/].htescape ($group_id) . '/';
                print q[">] . htescape ($group_id), q[</a> ];
                print q[<input type=hidden name=action value=leave>];
-               print q[<input type=submit value="Leave this group"></form>];
+               print q[<input type=submit value="];
+               print_text ('Leave this group');
+               print q["></form>];
              });
       }
       
@@ -103,7 +114,9 @@ if (@path == 3 and
                print q[<a href="../../groups/].htescape ($group_id) . '/';
                print q[">] . htescape ($group_id), q[</a> ];
                print q[<input type=hidden name=action value=leave>];
-               print q[<input type=submit value="Cancel the request"></form>];
+               print q[<input type=submit value="];
+               print_text ('Cancel the request');
+               print q["></form>];
              });
       }
       
@@ -119,7 +132,9 @@ if (@path == 3 and
                print q[<a href="../../groups/].htescape ($group_id) . '/';
                print q[">] . htescape ($group_id), q[</a> ];
                print q[<input type=hidden name=action value=join>];
-               print q[<input type=submit value="Join this group"></form>];
+               print q[<input type=submit value="];
+               print_text ('Join this group');
+               print q["></form>];
              });
       }
       
@@ -135,7 +150,9 @@ if (@path == 3 and
                print q[<a href="../../groups/].htescape ($group_id) . '/';
                print q[">] . htescape ($group_id), q[</a>];
                print q[<input type=hidden name=action value=join>];
-               print q[<input type=submit value="Join this group"></form>];
+               print q[<input type=submit value="];
+               print_text ('Join this group');
+               print q["></form>];
              });
       }
       
@@ -151,14 +168,17 @@ if (@path == 3 and
                print q[<a href="../../groups/].htescape ($group_id) . '/';
                print q[">] . htescape ($group_id), q[</a> ];
                print q[<input type=hidden name=action value=join>];
-               print q[<input type=submit value="Join this group"></form>];
+               print q[<input type=submit value="];
+               print_text ('Join this group');
+               print q["></form>];
              });
       }
       
-      print q[</section><section id=props><h2>Properties</h2>
-
-<p><em>Though these properties are only accessible to administrators,
-you are advised not to expose any confidential data.</em>];
+      print q[</section><section id=props><h2>];
+      print_text ('Properties');
+      print q[</h2><p><em>];
+      print_text (q[Don't expose any confidential data.]);
+      print q[</em>];
 
       print_prop_list ($ac, $user_prop,
         {
@@ -178,40 +198,55 @@ you are advised not to expose any confidential data.</em>];
         },
       );
 
-      print qq[</section><section id=password>
-<h2>Password</h2>
+      print qq[</section><section id=password><h2>];
+      print_text ('Password');
+      print q[</h2>
 
 <form action=password method=post accept-charset=utf-8>
 
-<p>You can change the password.
+<p>];
+      print_text ('You can change the password.');
 
-<p><strong>New password</strong>: <input type=password name=user-pass
-size=10 required pattern=".{4,}" title="Type 4 characters at minimum">
-
-<p><strong>New password</strong> (type again): <input type=password
+      print q[<p><strong>];
+      print_text ('New password');
+      print q[</strong>: <input type=password name=user-pass
+size=10 required pattern=".{4,}"> (];
+      print_text ('Type 4 characters at minimum');
+      print q[) <p><strong>];
+      print_text ('New password');
+      print q[</strong> (];
+      print_text ('type again');
+      print q[): <input type=password
 name=user-pass2 size=10 required pattern=".{4,}">
 
-<p><input type=submit value=Change>
+<p><input type=submit value="];
+     print_text ('Change');
+     print q[">
 
 </form>
 </section>
 
-<section id=disable-account><h2>Disable account</h2>
+<section id=disable-account><h2>];
+     print_text ('Disable account');
+     print q[</h2>
 
 <form action=disabled method=post accept-charset=utf-8>
 
-<p><label><input type=checkbox name=action value=enable
-@{[$user_prop->{disabled} ? '' : 'checked']}> Enable this
-account.</label>
+<p><label><input type=checkbox name=action value=enable ];
+    print 'checked' unless $user_prop->{disabled};
+    print q[> ];
+    print_text ('Enable this account');
+    print q[</label>
 
-<p><strong>Caution!</strong> Once you disable your own account, you
-cannot enable your account by yourself.
+<p><strong>];
+    print_text ('Caution!');
+    print q[</strong> ];
+    print_text ('Once you disable your own account, you cannot enable your account by yourself.');
 
-<p><input type=submit value=Change>
-
-</form>
-
-</section>];
+    print q[<p><input type=submit value="];
+    print_text ('Change');
+  
+  print q["></form></section>];
 
       exit;
     }
@@ -257,27 +292,34 @@ cannot enable your account by yourself.
             }
           } else {
             my $e_group_id = htescape ($group_id);
-            print qq[Content-Type: text/html; charset=utf-8
+            print q[Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
 <html lang=en>
-<title>Joining the group $e_group_id</title>
+<title>];
+            print_text ('Joining the group %s', sub { print $e_group_id });
+            print q[</title>
 <link rel=stylesheet href="/www/style/html/xhtml">
-<h1>Joining the group $e_group_id</h1>
+<h1>];
+            print_text ('Joining the group %s', sub { print $e_group_id });
+            print q[</h1>
 
 <dl>
-<dt>Description
-<dd>@{[$group_prop->{desc}]}
+<dt>];
+            print_text ('Description');
+            print qq[<dd>@{[$group_prop->{desc}]}
 </dl>
 
 <form action="@{[htescape ($cgi->request_uri)]}" accept-charset=utf-8 method=post>
 <input type=hidden name=action value=join>
 
-<p>Do you really want to join this group?
-<input type=submit name=agreed value=yes>
-<input type=button value=no onclick="history.back ()">
-
-</form>];
+<p>];
+            print_text ('Do you really want to join this group?');
+            print q[ <input type=submit name=agreed value="];
+            print_text ('Yes');
+            print q["> <input type=button value="];
+            print_text ('No');
+            print q[" onclick="history.back ()"></form>];
             exit;
           }
         } elsif ($action eq 'leave') {
@@ -393,15 +435,21 @@ cannot enable your account by yourself.
       
       my $e_group_id = htescape ($group_id);
       
-      print qq[Content-Type: text/html; charset=utf-8
+      print q[Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
 <html lang=en>
-<title>Group $e_group_id</title>
+<title>];
+      print_text ('Group %s', sub { print $e_group_id });
+      print q[</title>
 <link rel=stylesheet href="/www/style/html/xhtml">
-<h1>Group $e_group_id</h1>];
+<h1>];
+      print_text ('Group %s', sub { print $e_group_id });
+      print q[</h1>];
       
-      print q[<section id=props><h2>Properties</h2>];
+      print q[<section id=props><h2>];
+      print_text ('Properties');
+      print q[</h2>];
 
       print_prop_list ($ac, $group_prop,
            {
@@ -417,7 +465,9 @@ cannot enable your account by yourself.
            },
           );
 
-      print q[</section><section id=members><h2>Members</h2>];
+      print q[</section><section id=members><h2>];
+      print_text ('Members');
+      print q[</h2>];
 
       if ($ac->{read_group_member_list}) {
         my @members;
@@ -443,11 +493,13 @@ cannot enable your account by yourself.
                print_item => sub {
                  my $user_id = shift;
                  print q[<form action="user.] . htescape ($user_id);
-               print q[" accept-charset=utf-8 method=post>];
+                 print q[" accept-charset=utf-8 method=post>];
                  print qq[<a href="../../users/@{[htescape ($user_id)]}/">];
                  print '' . htescape ($user_id) . q[</a> ];
                  print q[<input type=hidden name=action value=unapprove>];
-                 print q[<input type=submit value="Kick"></form>];
+                 print q[<input type=submit value="];
+                 print_text ('Kick');
+                 print q["></form>];
                });
         }
         
@@ -463,7 +515,9 @@ cannot enable your account by yourself.
                  print qq[<a href="../../users/@{[htescape ($user_id)]}/">];
                  print '' . htescape ($user_id) . q[</a> ];
                  print q[<input type=hidden name=action value=approve>];
-                 print q[<input type=submit value=Approve></form>];
+                 print q[<input type=submit value="];
+                 print_text ('Approve');
+                 print q["></form>];
                });
         }
         
@@ -479,52 +533,59 @@ cannot enable your account by yourself.
                  print qq[<a href="../../users/@{[htescape ($user_id)]}/">];
                  print '' . htescape ($user_id), q[</a> ];
                  print q[<input type=hidden name=action value=unapprove>];
-                 print q[<input type=submit value="Cancel invitation"></form>];
+                 print q[<input type=submit value="];
+                 print_text ('Cancel invitation');
+                 print q["></form>];
                });
         }
       }
 
       my $join_condition = $group_prop->{join_condition};
       my $disabled = $ac->{write} ? '' : 'disabled';
-      print qq[<section id=member-approval>
-<h3>Member approval policy</h3>
+      print qq[<section id=member-approval><h3>];
+      print_text ('Member approval policy');
+      print qq[</h3>
 
 <form action=join-condition method=post accept-charset=utf-8>
 
 <p><label><input type=radio name=condition value=invitation $disabled
-@{[$join_condition->{invitation} ? 'checked' : '']}> A user who is
-invited by an administrator of the group can join the group.</label>
+@{[$join_condition->{invitation} ? 'checked' : '']}> ];
+      print_text ('A user who is invited by an administrator of the group can join the group.');
+      print qq[</label>
 
 <p><label><input type=radio name=condition value=approval $disabled
 @{[(not $join_condition->{invitation} and $join_condition->{approval})
-?  'checked' : '']}> A user who is invited or approved by an
-administrator of the group can join the group.</label>
+?  'checked' : '']}> ];
+       print_text ('A user who is invited or approved by an administrator of the group can join the group.');
+       print qq[</label>
 
 <p><label><input type=radio name=condition value=anyone $disabled
 @{[(not $join_condition->{invitation} and not
-$join_condition->{approval}) ?  'checked' : '']}> Any user can join
-the group.</label>
-
-@{[$disabled ? '' : '<p><input type=submit value=Change>']}
-
-</form>
-
-</section>];
+$join_condition->{approval}) ?  'checked' : '']}> ];
+       print_text ('Any user can join the group.');
+       print q[</label>];
+       unless ($disabled) {
+         print q[<p><input type=submit value="];
+         print_text ('Change');
+         print q[">];
+       }
+       print q[</form></section>];
 
       if ($ac->{write}) {
-        print q[<section id=member-invitation>
-<h3>Invite a user</h3>
+        print q[<section id=member-invitation><h3>];
+        print_text ('Invite a user');
+        print q[</h3>
 
 <form action=invite-user accept-charset=utf-8 method=post>
 
-<p><strong>User id</strong>: <input type=text name=user-id
+<p><strong>];
+        print_text ('User id');
+        print q[</strong>: <input type=text name=user-id
 maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}">
 
-<p><input type=submit value=Invite>
-
-</form>
-
-</section>];
+<p><input type=submit value="];
+        print_text ('Invite');
+        print q["></form></section>];
       }
 
       print q[</section>];
@@ -657,12 +718,14 @@ maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}">
     my $group_id = $cgi->get_parameter ('group-id');
 
     if ($group_id !~ /\A[0-9a-z-]{4,20}\z/) {
-      print_error (400, qq[Group id "$group_id" is invalid; use characters [0-9a-z-]{4,20}]);
+      print_error (400,
+                   q[Group id %s is invalid; use characters [0-9a-z-]{4,20}],
+                   $group_id);
       exit;
     }
     
     if (get_group_prop ($group_id)) {
-      print_error (400, qq[Group id "$group_id" is already used]);
+      print_error (400, q[Group id %s is already used], $group_id);
       exit;
     }
 
@@ -679,31 +742,45 @@ Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
 <html lang=en>
-<title>Group "@{[htescape ($group_id)]}" registered</title>
+<title>];
+    print_text ('Group %s registered', sub { print '', htescape ($group_id) });
+    print q[</title>
 <link rel=stylesheet href="/www/style/html/xhtml">
-<h1>Group "@{[htescape ($group_id)]}" registered</h1>
-<p>The new group is created successfully.
-<p>See <a href="@{[htescape ($group_url)]}">the group information page</a>.];
+<h1>];
+    print_text ('Group %s registered', sub { print '', htescape ($group_id) });
+    print q[</h1><p>];
+    print_text ('The new group is created successfully.');
+    print q[<p>];
+    print_text ('See %s.', sub {
+      print qq[<a href="@{[htescape ($group_url)]}">];
+      print_text ('the group information page');
+      print qq[</a>];
+    });
     exit;
   } else {
     binmode STDOUT, ":encoding(utf-8)";
-    print qq[Content-Type: text/html; charset=utf-8
+    print q[Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
 <html lang=en>
-<title>Create a new group</title>
+<title>];
+    print_text ('Create a new group');
+    print q[</title>
 <link rel=stylesheet href="/www/style/html/xhtml">
-<h1>Create a new group</h1>
+<h1>];
+    print_text ('Create a new group');
+    print q[</h1>
 
 <form action=new-group accept-charset=utf-8 method=post>
 
-<p><strong>Group id</strong>: <input type=text name=group-id
-maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}"
-title="Use a string of characters 'a'..'z', '0'..'9', and '-' with length 4..10 (inclusive)">
-
-<p><input type=submit value=Create>
-
-</form>];
+<p><strong>];
+    print_text ('Group id');
+    print q[</strong>: <input type=text name=group-id
+maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}"> (];
+    print_text ('Use [0-9a-z-]{4,20}.');
+    print q[) <p><input type=submit value="];
+    print_text ('Create');
+    print q["></form>];
     exit;
   }
 } elsif (@path == 1 and $path[0] eq '') {
@@ -725,7 +802,8 @@ sub print_list_section (%) {
   $opt{level} ||= 3;
   
   print q[<section id="] . htescape ($opt{id});
-  print q["><h] . $opt{level} . q[>] . htescape ($opt{title});
+  print q["><h] . $opt{level} . q[>];
+  print_text ($opt{title});
   print q[</h] . $opt{level} . q[><ul>];
   for my $item (sort {$a cmp $b} @{$opt{items}}) {
     print q[<li>];
@@ -740,7 +818,9 @@ sub print_prop_list ($$@) {
 
   for my $prop (@_) {
     if ($prop->{public}) {
-      print q[<p><strong>], htescape ($prop->{label}), q[</strong>: ];
+      print q[<p><strong>];
+      print_text ($prop->{label});
+      print q[</strong>: ];
       print $prop_hash->{$prop->{name}};
     }
     
@@ -748,18 +828,24 @@ sub print_prop_list ($$@) {
       print q[<form action="prop" accept-charset=utf-8 method=post>];
       print q[<input type=hidden name=name value="], htescape ($prop->{name}), q[">];
       if ($prop->{field_type} eq 'textarea') {
-        print q[<p><label><strong>], htescape ($prop->{label});
+        print q[<p><label><strong>];
+        print_text ($prop->{label});
         print q[</strong>: <br><textarea name="value"];
         print q[>], htescape ($prop_hash->{$prop->{name}} // '');
         print q[</textarea></label>];
-        print q[<p><input type=submit value=Save>];
+        print q[<p><input type=submit value="];
+        print_text ('Save');
+        print q[">];
       } else {
-        print q[<p><label><strong>], htescape ($prop->{label});
+        print q[<p><label><strong>];
+        print_text ($prop->{label});
         print q[</strong>: <input type="] . $prop->{field_type};
         print q[" name="value" ];
         print q[value="], htescape ($prop_hash->{$prop->{name}} // '');
         print q["></label> ];
-        print q[<input type=submit value=Save>];
+        print q[<input type=submit value="];
+        print_text ('Save');
+        print q[">];
       }
       print q[</form>];
     }
@@ -825,7 +911,7 @@ sub check_access_right (%) {
 sub forbidden () {
   my $user = $cgi->remote_user;
   if (defined $user) {
-    print_error (403, q[Forbidden (you've logged in as ] . $user . ')');
+    print_error (403, q[Forbidden (you've logged in as %s)], $user);
   } else {
     print_error (403, 'Forbidden');
   }

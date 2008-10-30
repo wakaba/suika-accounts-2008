@@ -169,18 +169,25 @@ sub regenerate_htpasswd_and_htgroup () {
   }
 } # regenerate_htpasswd_and_htgroup
 
-sub print_error ($$) {
-  my ($code, $text) = @_;
+sub print_error ($$;$) {
+  my ($code, $text, $text_arg) = @_;
+  our $Lang;
   binmode STDOUT, ':encoding(utf-8)';
-  print qq[Status: $code $text
+  my $_text = $text;
+  $_text =~ s/%s/$text_arg/g;
+  print qq[Status: $code $_text
 Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
-<html lang=en>
-<title>$code @{[htescape ($text)]}</title>
+<html lang="$Lang">
+<title lang=en>$code @{[htescape ($_text)]}</title>
 <link rel=stylesheet href="/www/style/html/xhtml">
-<h1>Error</h1>
-<p>@{[htescape ($text)]}.<!--];
+<h1>];
+  print_text ('Error');
+  print q[</h1><p>];
+  print_text ($text, sub { print '', htescape ($text_arg) });
+  print_text ('.');
+  print q[<!--];
   print 0 for 0..511; # for WinIE
   print q[-->];
 } # print_error
