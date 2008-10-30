@@ -149,7 +149,7 @@ if (@path == 3 and
                print q[" accept-charset=utf-8 method=post>];
                print q[<a href="../../groups/].htescape ($group_id) . '/';
                print q[">] . htescape ($group_id), q[</a>];
-               print q[<input type=hidden name=action value=join>];
+               print q[<input type=hidden name=action value=join> ];
                print q[<input type=submit value="];
                print_text ('Join this group');
                print q["></form>];
@@ -346,7 +346,7 @@ name=user-pass2 size=10 required pattern=".{4,}">
         regenerate_htpasswd_and_htgroup ();
         commit ();
 
-        redirect (303, $status, './');
+        redirect (303, $status, './#groups');
         exit;
       }
     }
@@ -703,7 +703,8 @@ maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}">
         regenerate_htpasswd_and_htgroup ();
         commit ();
         
-        print "Status: 204 $status\n\n";
+        #print "Status: 204 $status\n\n";
+        redirect (303, $status, './#members');
         exit;
       }
     }

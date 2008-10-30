@@ -127,7 +127,7 @@ my $texts = {
   'Join this group' => {
     ja => 'このグループに入る',
   },
-  'Joinning the group %s' => {
+  'Joining the group %s' => {
     ja => 'グループ %s への参加',
   },
   'Leave this group' => {
