@@ -442,8 +442,16 @@ name=user-pass2 size=10 required pattern=".{4,}">
 <title>];
       print_text ('Group %s', sub { print $e_group_id });
       print q[</title>
-<link rel=stylesheet href="/www/style/html/xhtml">
-<h1>];
+<link rel=stylesheet href="/www/style/html/xhtml">];
+      if (defined $group_prop->{favicon_url}) {
+        print q[<link rel=icon href="], htescape ($group_prop->{favicon_url});
+        print q[">];
+      }
+      print q[<h1>];
+      if (defined $group_prop->{favicon_url}) {
+        print q[<img src="], htescape ($group_prop->{favicon_url});
+        print q[" alt="">];
+      }
       print_text ('Group %s', sub { print $e_group_id });
       print q[</h1>];
       
@@ -462,6 +470,11 @@ name=user-pass2 size=10 required pattern=".{4,}">
             name => 'admin_group',
             label => 'Administrative group',
             field_type => 'text',
+           },
+           {
+            name => 'favicon_url',
+            label => 'Group icon URL',
+            field_type => 'url',
            },
           );
 
@@ -631,7 +644,8 @@ maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}">
 
         my $prop_name = $cgi->get_parameter ('name');
         if (defined $prop_name and
-            {desc => 1, admin_group => 1}->{$prop_name}) {
+            {desc => 1, admin_group => 1,
+             favicon_url => 1}->{$prop_name}) {
           $group_prop->{$prop_name} = $cgi->get_parameter ('value');
 
           set_group_prop ($group_id, $group_prop);

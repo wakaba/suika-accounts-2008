@@ -88,6 +88,9 @@ my $texts = {
   'Group %s registered' => {
     ja => 'グループ %s を登録しました。',
   },
+  'Group icon URL' => {
+    ja => 'グループのアイコンの URL',
+  },
   'Group id' => {
     en => 'Group ID',
     ja => 'グループ識別子',
