@@ -1,5 +1,9 @@
 use strict;
 
+my $mail_from = q<webmaster@suika.fam.cx>;
+my $mail_to = q<webmaster@suika.fam.cx>;
+my $subject_prefix = q<[suika.fam.cx account]>;
+
 my $user_data_dir_name = 'data/';
 my $user_prop_file_suffix = '.user';
 
@@ -211,6 +215,24 @@ sub check_password ($) {
       join '', (0..9, 'A'..'Z', 'a'..'z')[rand 64, rand 64];
   return $pass_crypted;
 } # check_password
+
+sub send_mail ($$) {
+  require Net::SMTP;
+  require Encode;
+  
+  my $smtp = Net::SMTP->new ('localhost');
+  $smtp->mail ($mail_from);
+  $smtp->to ($mail_to);
+  ## NOTE: What's wrong with UTF-8 Subject? :-)
+  $smtp->data (Encode::encode ('utf-8', "From: <$mail_from>
+To: <$mail_to>
+Subject: $_[0]
+Content-Type: text/plain; charset=utf-8
+MIME-Version: 1.0
+
+$_[1]"));
+  $smtp->send;
+} # send_mail
 
 sub system_ (@) {
   (system join (' ', map {quotemeta $_} @_) . " > /dev/null") == 0

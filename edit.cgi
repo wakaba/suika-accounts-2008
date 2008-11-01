@@ -10,6 +10,8 @@ require Message::CGI::Carp;
 require 'users.pl';
 require 'texts.pl';
 
+our $subject_prefix;
+
 require Message::CGI::HTTP;
 require Encode;
 my $cgi = Message::CGI::HTTP->new;
@@ -343,6 +345,8 @@ name=user-pass2 size=10 required pattern=".{4,}">
         }
 
         set_user_prop ($user_id, $user_prop);
+        send_mail ("$subject_prefix $group_id membership action",
+                   "Group: $group_id\nUser: $user_id\nAction: $action\nStatus: $status\n");
         regenerate_htpasswd_and_htgroup ();
         commit ();
 
@@ -386,6 +390,8 @@ name=user-pass2 size=10 required pattern=".{4,}">
         }
 
         set_user_prop ($user_id, $user_prop);
+        send_mail ("$subject_prefix $user_id disabledness action",
+                   "User: $user_id\nNew value: @{[$user_prop->{disabled} ? 'disabled' : 'enabled']}\n");
         regenerate_htpasswd_and_htgroup ();
         commit ();
 
@@ -714,6 +720,8 @@ maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}">
         }
         
         set_user_prop ($user_id, $user_prop);
+        send_mail ("$subject_prefix $group_id membership action",
+                   "Group: $group_id\nUser: $user_id\nAction: $action\nStatus: $status\n");
         regenerate_htpasswd_and_htgroup ();
         commit ();
         
@@ -747,6 +755,8 @@ maxlength=20 size=10 required pattern="[0-9a-z-]{4,20}">
     my $group_prop = {id => $group_id};
     set_group_prop ($group_id, $group_prop);
 
+    send_mail ("$subject_prefix Group $group_id created",
+               "Group: $group_id\nStatus: Group registered\n");
     commit ();
 
     my $group_url = get_absolute_url ('groups/' . $group_id . '/');

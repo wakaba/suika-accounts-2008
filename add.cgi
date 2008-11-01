@@ -10,6 +10,8 @@ require Message::CGI::Carp;
 require 'users.pl';
 require 'texts.pl';
 
+our $subject_prefix;
+
 require Message::CGI::HTTP;
 require Encode;
 my $cgi = Message::CGI::HTTP->new;
@@ -53,6 +55,9 @@ if (@path == 1 and $path[0] eq 'new-user') {
     my $user_prop = {id => $user_id, pass_crypted => $pass_crypted};
     set_user_prop ($user_id, $user_prop);
 
+    send_mail ("$subject_prefix User $user_id created",
+               "User: $user_id\nStatus: User registered\n");
+
     regenerate_htpasswd_and_htgroup ();
     commit ();
 
@@ -74,7 +79,7 @@ Content-Type: text/html; charset=utf-8
     print_text ('Your user account is created successfully.');
     print q[<p>];
     print_text ('See %s.', sub {
-      print q[<a href="@{[htescape ($user_url)]}">];
+      print qq[<a href="@{[htescape ($user_url)]}">];
       print_text ('your user account information page');
       print q[</a>];
     });
