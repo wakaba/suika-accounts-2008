@@ -68,11 +68,11 @@ Location: $user_url
 Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
-<html lang=en>
+<html lang=en class=account-user-misc>
 <title>];
     print_text ('User %s registered', sub { print '', htescape ($user_id) });
     print q[</title>
-<link rel=stylesheet href="/www/style/html/xhtml">
+<link rel=stylesheet href="/admin/style/common">
 <h1>];
     print_text ('User %s registered', sub { print '', htescape ($user_id) });
     print q[</h1><p>];
@@ -89,11 +89,11 @@ Content-Type: text/html; charset=utf-8
     print q[Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
-<html lang=en>
+<html lang=en class=account-user-misc>
 <title>];
     print_text ('Create a new user account');
     print q[</title>
-<link rel=stylesheet href="/www/style/html/xhtml">
+<link rel=stylesheet href="/admin/style/common">
 <h1>];
     print_text ('Create a new user account');
     print q[</h1>

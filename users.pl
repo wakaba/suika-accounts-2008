@@ -183,9 +183,9 @@ sub print_error ($$;$) {
 Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
-<html lang="$Lang">
+<html lang="$Lang" class=account-error>
 <title lang=en>$code @{[htescape ($_text)]}</title>
-<link rel=stylesheet href="/www/style/html/xhtml">
+<link rel=stylesheet href="/admin/style/common">
 <h1>];
   print_text ('Error');
   print q[</h1><p>];

@@ -48,11 +48,11 @@ if (@path == 3 and
       print q[Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
-<html lang=en>
+<html lang=en class=account-user-info>
 <title>];
       print_text ('User %s', sub { print $e_user_id });
       print q[</title>
-<link rel=stylesheet href="/www/style/html/xhtml">
+<link rel=stylesheet href="/admin/style/common">
 <h1>];
       print_text ('User %s', sub { print $e_user_id });
       print q[</h1>];
@@ -297,11 +297,11 @@ name=user-pass2 size=10 required pattern=".{4,}">
             print q[Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
-<html lang=en>
+<html lang=en class=account-group-misc>
 <title>];
             print_text ('Joining the group %s', sub { print $e_group_id });
             print q[</title>
-<link rel=stylesheet href="/www/style/html/xhtml">
+<link rel=stylesheet href="/admin/style/common">
 <h1>];
             print_text ('Joining the group %s', sub { print $e_group_id });
             print q[</h1>
@@ -444,11 +444,11 @@ name=user-pass2 size=10 required pattern=".{4,}">
       print q[Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
-<html lang=en>
+<html lang=en class=account-group-info>
 <title>];
       print_text ('Group %s', sub { print $e_group_id });
       print q[</title>
-<link rel=stylesheet href="/www/style/html/xhtml">];
+<link rel=stylesheet href="/admin/style/common">];
       if (defined $group_prop->{favicon_url}) {
         print q[<link rel=icon href="], htescape ($group_prop->{favicon_url});
         print q[">];
@@ -766,11 +766,11 @@ Location: $group_url
 Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
-<html lang=en>
+<html lang=en class=account-group-misc>
 <title>];
     print_text ('Group %s registered', sub { print '', htescape ($group_id) });
     print q[</title>
-<link rel=stylesheet href="/www/style/html/xhtml">
+<link rel=stylesheet href="/admin/style/common">
 <h1>];
     print_text ('Group %s registered', sub { print '', htescape ($group_id) });
     print q[</h1><p>];
@@ -787,11 +787,11 @@ Content-Type: text/html; charset=utf-8
     print q[Content-Type: text/html; charset=utf-8
 
 <!DOCTYPE HTML>
-<html lang=en>
+<html lang=en class=account-group-misc>
 <title>];
     print_text ('Create a new group');
     print q[</title>
-<link rel=stylesheet href="/www/style/html/xhtml">
+<link rel=stylesheet href="/admin/style/common">
 <h1>];
     print_text ('Create a new group');
     print q[</h1>
