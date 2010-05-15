@@ -1,3 +1,7 @@
+Options +ExecCGI
+AddHandler cgi-script .cgi
+AddType text/html .cgi
+
 <Files ~ "edit">
   Require valid-user
   AuthType Basic
