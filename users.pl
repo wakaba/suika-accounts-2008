@@ -13,6 +13,9 @@ my $group_prop_file_suffix = '.group';
 my $htpasswd_file_name = 'data/htpasswd';
 my $htgroup_file_name = 'data/htgroup';
 
+my $cvs_chdir = 'data/';
+my $cvs_chdir_return = '../';
+
 my $lock_file_name = $user_data_dir_name . '.lock';
 
 use Fcntl ':flock';
@@ -86,12 +89,16 @@ sub set_prop_hash ($$) {
   }
   close $user_prop_file;
 
-  system_ ('cvs', 'add', $user_prop_file_name) unless $has_file;
+  chdir $cvs_chdir;
+  system_ ('cvs', 'add', $cvs_chdir_return . $user_prop_file_name) unless $has_file;
+  chdir $cvs_chdir_return;
 } # set_prop_hash
 
 sub commit ($) {
   my $msg = shift // $0;
-  system_ ('cvs', 'commit', -m => $msg, $user_data_dir_name);
+  chdir $cvs_chdir;
+  system_ ('cvs', 'commit', -m => $msg, $cvs_chdir_return . $user_data_dir_name);
+  chdir $cvs_chdir_return;
 } # commit
 
 sub get_user_prop ($) {
