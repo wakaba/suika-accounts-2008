@@ -84,7 +84,7 @@ sub set_prop_hash ($$) {
       print $user_prop_file $v . ':' . $pv . "\x0A";
     }
   }
-  close $user_prop_file_name;
+  close $user_prop_file;
 
   system_ ('cvs', 'add', $user_prop_file_name) unless $has_file;
 } # set_prop_hash
